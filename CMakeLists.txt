@@ -26,6 +26,7 @@ set(ENGINE_SOURCES
     src/data/OrderBook.cpp
     src/order/OrderLogger.cpp
     src/logger/Logger.cpp
+    src/risk/Portfolio.cpp
 )
 
 # Main executable - Trading Engine
@@ -58,6 +59,12 @@ add_executable(test_bookmanager
     ${ENGINE_SOURCES}
 )
 
+# Test executable - Portfolio Tests
+add_executable(test_portfolio
+    tests/portfolio_test.cpp
+    ${ENGINE_SOURCES}
+)
+
 # Link threading library (required for std::thread, std::mutex)
 find_package(Threads REQUIRED)
 target_link_libraries(trading_engine Threads::Threads)
@@ -65,6 +72,7 @@ target_link_libraries(test_event Threads::Threads)
 target_link_libraries(test_ordermanager Threads::Threads)
 target_link_libraries(test_orderbook Threads::Threads)
 target_link_libraries(test_bookmanager Threads::Threads)
+target_link_libraries(test_portfolio Threads::Threads)
 
 # Enable testing
 enable_testing()
@@ -74,6 +82,7 @@ add_test(NAME EventTests COMMAND test_event)
 add_test(NAME OrderManagerTests COMMAND test_ordermanager)
 add_test(NAME OrderBookTests COMMAND test_orderbook)
 add_test(NAME BookManagerTests COMMAND test_bookmanager)
+add_test(NAME PortfolioTests COMMAND test_portfolio)
 
 # Print build configuration
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
