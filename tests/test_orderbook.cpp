@@ -213,6 +213,7 @@ void testClearBook() {
     Logger::info(LogComponent::TEST, "✓ Book cleared successfully");
 }
 
+#ifndef TEST_ALL
 int main() {
     Logger::init(LogLevel::INFO);
     
@@ -238,3 +239,4 @@ int main() {
     Logger::shutdown();
     return 0;
 }
+#endif

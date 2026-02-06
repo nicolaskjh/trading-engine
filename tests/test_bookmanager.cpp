@@ -245,6 +245,7 @@ void testMultipleQuoteUpdates() {
     Logger::info(LogComponent::TEST, "✓ Multiple quote updates working");
 }
 
+#ifndef TEST_ALL
 int main() {
     Logger::init(LogLevel::INFO);
     
@@ -270,3 +271,4 @@ int main() {
     Logger::shutdown();
     return 0;
 }
+#endif

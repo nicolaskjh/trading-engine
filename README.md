@@ -34,7 +34,7 @@ cmake --build .
 ./trading_engine
 
 # Run component tests
-./test_engine
+./test_all
 ```
 
 ## Build Configuration
