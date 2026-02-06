@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Event.h"
-#include <string>
+
 #include <functional>
+#include <string>
 
 namespace engine {
 

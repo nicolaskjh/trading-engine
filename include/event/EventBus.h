@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Event.h"
+
 #include <functional>
+#include <memory>
+#include <mutex>
+#include <queue>
 #include <unordered_map>
 #include <vector>
-#include <queue>
-#include <mutex>
-#include <memory>
 
 namespace engine {
 
