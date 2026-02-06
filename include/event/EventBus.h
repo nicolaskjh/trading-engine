@@ -42,7 +42,7 @@ public:
      * @return Subscription ID (can be used to unsubscribe later)
      */
     uint64_t subscribe(EventType type, EventHandler handler) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
         uint64_t id = nextSubscriptionId_++;
         subscribers_[type].push_back({id, std::move(handler)});
         return id;
@@ -53,7 +53,7 @@ public:
      * @param subscriptionId ID returned from subscribe()
      */
     void unsubscribe(uint64_t subscriptionId) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
         for (auto& [type, handlers] : subscribers_) {
             handlers.erase(
                 std::remove_if(handlers.begin(), handlers.end(),
@@ -70,17 +70,26 @@ public:
      * This is the primary method for time-critical events
      */
     void publish(const Event& event) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        
-        auto it = subscribers_.find(event.getType());
-        if (it != subscribers_.end()) {
-            // Call all subscribed handlers for this event type
-            for (const auto& sub : it->second) {
-                sub.handler(event);
+        // Copy handlers while holding lock, then release before calling them
+        std::vector<EventHandler> handlersCopy;
+        {
+            std::lock_guard<std::recursive_mutex> lock(mutex_);
+            
+            auto it = subscribers_.find(event.getType());
+            if (it != subscribers_.end()) {
+                // Copy handlers to avoid holding lock during callback execution
+                for (const auto& sub : it->second) {
+                    handlersCopy.push_back(sub.handler);
+                }
             }
+            
+            ++eventCount_;
         }
         
-        ++eventCount_;
+        // Call handlers without holding lock to avoid deadlock if they publish events
+        for (const auto& handler : handlersCopy) {
+            handler(event);
+        }
     }
 
     /**
@@ -98,7 +107,7 @@ public:
      * Use for non-critical events (logging, metrics)
      */
     void enqueue(EventPtr event) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
         eventQueue_.push(std::move(event));
     }
 
@@ -107,7 +116,7 @@ public:
      * @param maxEvents Maximum number of events to process (0 = all)
      */
     void processQueue(size_t maxEvents = 0) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
         
         size_t processed = 0;
         while (!eventQueue_.empty() && (maxEvents == 0 || processed < maxEvents)) {
@@ -129,13 +138,13 @@ public:
     // Statistics
     uint64_t getEventCount() const { return eventCount_; }
     size_t getQueueSize() const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
         return eventQueue_.size();
     }
     
     // Clear all subscribers (useful for testing/shutdown)
     void clear() {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
         subscribers_.clear();
         while (!eventQueue_.empty()) eventQueue_.pop();
         eventCount_ = 0;
@@ -164,7 +173,7 @@ private:
     uint64_t eventCount_;
     
     // Thread safety
-    mutable std::mutex mutex_;
+    mutable std::recursive_mutex mutex_;
 };
 
 } // namespace engine
