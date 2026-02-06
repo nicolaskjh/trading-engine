@@ -1,7 +1,7 @@
 #pragma once
 
-#include "event/EventBus.h"
 #include "data/OrderBook.h"
+#include "event/EventBus.h"
 
 #include <memory>
 #include <string>

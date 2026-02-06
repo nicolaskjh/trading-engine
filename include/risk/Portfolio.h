@@ -1,7 +1,7 @@
 #pragma once
 
-#include "order/OrderManager.h"
 #include "order/Order.h"
+#include "order/OrderManager.h"
 
 #include <memory>
 #include <mutex>
