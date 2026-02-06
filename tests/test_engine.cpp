@@ -2,15 +2,16 @@
 #include "event/MarketDataEvent.h"
 #include "event/OrderEvent.h"
 #include "event/TimerEvent.h"
-#include "order/OrderManager.h"
+#include "logger/Logger.h"
 #include "market_data/MarketDataHandler.h"
 #include "order/OrderLogger.h"
-#include "logger/Logger.h"
-#include <iostream>
+#include "order/OrderManager.h"
+
+#include <chrono>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <thread>
-#include <chrono>
 
 using namespace engine;
 
