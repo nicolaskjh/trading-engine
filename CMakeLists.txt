@@ -21,6 +21,9 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # Source files
 set(ENGINE_SOURCES
+    src/backtesting/Backtester.cpp
+    src/backtesting/HistoricalDataLoader.cpp
+    src/backtesting/PerformanceMetrics.cpp
     src/config/Config.cpp
     src/data/BookManager.cpp
     src/data/MarketDataHandler.cpp
@@ -112,6 +115,14 @@ add_test(NAME PortfolioTests COMMAND test_portfolio)
 add_test(NAME StrategyTests COMMAND test_strategy)
 add_test(NAME ConfigTests COMMAND test_config)
 add_test(NAME ExchangeTests COMMAND test_exchange)
+
+# Backtest executable
+add_executable(backtest_sma
+    backtests/backtest_sma.cpp
+    ${ENGINE_SOURCES}
+)
+
+target_link_libraries(backtest_sma Threads::Threads)
 
 # Print build configuration
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
