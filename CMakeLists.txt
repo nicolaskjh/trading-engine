@@ -21,7 +21,9 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # Source files
 set(ENGINE_SOURCES
+    src/market_data/BookManager.cpp
     src/market_data/MarketDataHandler.cpp
+    src/market_data/OrderBook.cpp
     src/order/OrderLogger.cpp
     src/logger/Logger.cpp
 )
@@ -38,16 +40,32 @@ add_executable(test_engine
     ${ENGINE_SOURCES}
 )
 
+# Test executable - Order Book Tests
+add_executable(test_orderbook
+    tests/test_orderbook.cpp
+    ${ENGINE_SOURCES}
+)
+
+# Test executable - Book Manager Tests
+add_executable(test_bookmanager
+    tests/test_bookmanager.cpp
+    ${ENGINE_SOURCES}
+)
+
 # Link threading library (required for std::thread, std::mutex)
 find_package(Threads REQUIRED)
 target_link_libraries(trading_engine Threads::Threads)
 target_link_libraries(test_engine Threads::Threads)
+target_link_libraries(test_orderbook Threads::Threads)
+target_link_libraries(test_bookmanager Threads::Threads)
 
 # Enable testing
 enable_testing()
 
-# Register test with CTest
+# Register tests with CTest
 add_test(NAME EngineTests COMMAND test_engine)
+add_test(NAME OrderBookTests COMMAND test_orderbook)
+add_test(NAME BookManagerTests COMMAND test_bookmanager)
 
 # Print build configuration
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")

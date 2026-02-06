@@ -1,5 +1,8 @@
 #include "event/EventBus.h"
 #include "logger/Logger.h"
+#include "market_data/BookManager.h"
+#include "market_data/MarketDataHandler.h"
+#include "order/OrderLogger.h"
 #include "order/OrderManager.h"
 
 #include <atomic>
@@ -41,6 +44,9 @@ int main(int argc, char* argv[]) {
     try {
         // Initialize core components
         OrderManager orderManager;
+        BookManager bookManager;
+        MarketDataHandler marketDataHandler;
+        OrderLogger orderLogger;
         
         Logger::info(LogComponent::ENGINE, "Initialized");
         Logger::info(LogComponent::ENGINE, "Ready to trade");
@@ -52,10 +58,11 @@ int main(int argc, char* argv[]) {
             EventBus::getInstance().processQueue(10);
             
             // In a real system, this would:
-            // - Process incoming market data
-            // - Execute strategy logic
+            // - Process incoming market data from exchanges
+            // - Execute strategy logic based on market conditions
             // - Send orders to exchanges
-            // - Handle fills and updates
+            // - Handle fills and position updates
+            // - Monitor risk limits
             
             // Sleep briefly to avoid busy-wait
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -67,6 +74,8 @@ int main(int argc, char* argv[]) {
                      std::to_string(EventBus::getInstance().getEventCount()));
         Logger::info(LogComponent::ENGINE, "Active orders: " + 
                      std::to_string(orderManager.getActiveOrderCount()));
+        Logger::info(LogComponent::ENGINE, "Tracked symbols: " + 
+                     std::to_string(bookManager.getBookCount()));
         Logger::info(LogComponent::ENGINE, "Shutdown complete");
         
         Logger::shutdown();
