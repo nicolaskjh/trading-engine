@@ -67,16 +67,26 @@ void SimulatedExchange::submitOrder(const std::string& orderId,
                        OrderStatus::NEW, price, quantity);
     EventBus::getInstance().publish(newEvent);
 
-    // Schedule fill
-    if (config_.instantFills) {
-        processFill(orderId, symbol, side, type, price, quantity);
+    // Handle limit orders differently from market orders
+    if (type == OrderType::LIMIT) {
+        // Store limit order - it will be checked when market price updates
+        std::lock_guard<std::mutex> lock(mutex_);
+        pendingOrders_[orderId] = {orderId, symbol, side, type, price, quantity};
+        
+        // Check if limit can be filled immediately at current market price
+        checkLimitOrders(symbol);
     } else {
-        std::thread([this, orderId, symbol, side, type, price, quantity]() {
-            std::this_thread::sleep_for(std::chrono::milliseconds(config_.fillLatencyMs));
-            if (isRunning_) {
-                processFill(orderId, symbol, side, type, price, quantity);
-            }
-        }).detach();
+        // Market orders: schedule fill
+        if (config_.instantFills) {
+            processFill(orderId, symbol, side, type, price, quantity);
+        } else {
+            std::thread([this, orderId, symbol, side, type, price, quantity]() {
+                std::this_thread::sleep_for(std::chrono::milliseconds(config_.fillLatencyMs));
+                if (isRunning_) {
+                    processFill(orderId, symbol, side, type, price, quantity);
+                }
+            }).detach();
+        }
     }
 }
 
@@ -96,8 +106,12 @@ void SimulatedExchange::cancelOrder(const std::string& orderId) {
 }
 
 void SimulatedExchange::setMarketPrice(const std::string& symbol, double price) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    marketPrices_[symbol] = price;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        marketPrices_[symbol] = price;
+    }
+    // Check if any limit orders can be filled at this new price
+    checkLimitOrders(symbol);
 }
 
 const SimulatedExchange::Config& SimulatedExchange::getConfig() const {
@@ -173,6 +187,62 @@ void SimulatedExchange::processFill(const std::string& orderId,
     OrderEvent filledEvent(orderId, symbol, side, type,
                           OrderStatus::FILLED, price, quantity, quantity);
     EventBus::getInstance().publish(filledEvent);
+}
+
+void SimulatedExchange::checkLimitOrders(const std::string& symbol) {
+    std::vector<PendingOrder> ordersToFill;
+    
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        
+        // Get current market price
+        auto priceIt = marketPrices_.find(symbol);
+        if (priceIt == marketPrices_.end()) {
+            return;  // No market price available
+        }
+        double marketPrice = priceIt->second;
+        
+        // Check all pending orders for this symbol
+        for (auto it = pendingOrders_.begin(); it != pendingOrders_.end(); ) {
+            if (it->second.symbol == symbol && it->second.type == OrderType::LIMIT) {
+                bool shouldFill = false;
+                
+                // Buy limit: fill if market price <= limit price
+                if (it->second.side == Side::BUY && marketPrice <= it->second.price) {
+                    shouldFill = true;
+                }
+                // Sell limit: fill if market price >= limit price
+                else if (it->second.side == Side::SELL && marketPrice >= it->second.price) {
+                    shouldFill = true;
+                }
+                
+                if (shouldFill) {
+                    ordersToFill.push_back(it->second);
+                    it = pendingOrders_.erase(it);
+                } else {
+                    ++it;
+                }
+            } else {
+                ++it;
+            }
+        }
+    }
+    
+    // Process fills outside the lock to avoid deadlock
+    for (const auto& order : ordersToFill) {
+        if (config_.instantFills) {
+            processFill(order.orderId, order.symbol, order.side, order.type,
+                       order.price, order.quantity);
+        } else {
+            std::thread([this, order]() {
+                std::this_thread::sleep_for(std::chrono::milliseconds(config_.fillLatencyMs));
+                if (isRunning_) {
+                    processFill(order.orderId, order.symbol, order.side, order.type,
+                               order.price, order.quantity);
+                }
+            }).detach();
+        }
+    }
 }
 
 bool SimulatedExchange::shouldReject() {

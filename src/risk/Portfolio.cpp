@@ -5,6 +5,7 @@ namespace engine {
 Portfolio::Portfolio()
     : initialCapital_(Config::getDouble("portfolio.initial_capital", 1000000.0))
     , cash_(initialCapital_)
+    , totalCommissions_(0.0)
     , orderManager_(std::make_unique<OrderManager>())
     , maxPositionSize_(Config::getDouble("portfolio.max_position_size", 1000000.0))
     , maxPortfolioExposure_(Config::getDouble("portfolio.max_portfolio_exposure", 5000000.0))
@@ -19,6 +20,7 @@ Portfolio::Portfolio()
 Portfolio::Portfolio(double initialCapital)
     : initialCapital_(initialCapital)
     , cash_(initialCapital)
+    , totalCommissions_(0.0)
     , orderManager_(std::make_unique<OrderManager>())
     , maxPositionSize_(Config::getDouble("portfolio.max_position_size", 1000000.0))
     , maxPortfolioExposure_(Config::getDouble("portfolio.max_portfolio_exposure", 5000000.0))
@@ -67,6 +69,11 @@ double Portfolio::getPortfolioValue(const std::unordered_map<std::string, double
 
 double Portfolio::getRealizedPnL() const {
     return orderManager_->getTotalRealizedPnL();
+}
+
+double Portfolio::getTotalCommissions() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return totalCommissions_;
 }
 
 double Portfolio::getUnrealizedPnL(const std::unordered_map<std::string, double>& marketPrices) const {
@@ -130,6 +137,7 @@ double Portfolio::getMaxPortfolioExposure() const {
 void Portfolio::clear() {
     std::lock_guard<std::mutex> lock(mutex_);
     cash_ = initialCapital_;
+    totalCommissions_ = 0.0;
     orderManager_->clear();
 }
 
@@ -187,14 +195,40 @@ void Portfolio::onFillEvent(const Event& event) {
     // Calculate trade value
     double tradeValue = fillEvent->getFillPrice() * fillEvent->getFillQuantity();
     
+    // Calculate commission
+    double commission = calculateCommission(fillEvent->getFillPrice(), 
+                                           fillEvent->getFillQuantity());
+    
     // Adjust cash based on trade side
     if (fillEvent->getSide() == Side::BUY) {
-        // Buying: debit cash
-        cash_ -= tradeValue;
+        // Buying: debit cash (trade value + commission)
+        cash_ -= (tradeValue + commission);
     } else if (fillEvent->getSide() == Side::SELL) {
-        // Selling: credit cash
-        cash_ += tradeValue;
+        // Selling: credit cash (trade value - commission)
+        cash_ += (tradeValue - commission);
     }
+    
+    // Track total commissions
+    totalCommissions_ += commission;
+}
+
+double Portfolio::calculateCommission(double fillPrice, int64_t fillQuantity) const {
+    std::string commissionType = Config::getString("portfolio.commission_type", "percentage");
+    double commission = 0.0;
+    
+    if (commissionType == "fixed") {
+        commission = Config::getDouble("portfolio.commission_fixed", 1.0);
+    } else if (commissionType == "percentage") {
+        double percentage = Config::getDouble("portfolio.commission_percentage", 0.001);
+        commission = fillPrice * fillQuantity * percentage;
+    } else if (commissionType == "per_share") {
+        double perShare = Config::getDouble("portfolio.commission_per_share", 0.005);
+        commission = fillQuantity * perShare;
+    }
+    
+    // Apply minimum commission
+    double minCommission = Config::getDouble("portfolio.commission_min", 1.0);
+    return std::max(commission, minCommission);
 }
 
 } // namespace engine

@@ -85,6 +85,7 @@ private:
                     OrderType type,
                     double price,
                     int64_t quantity);
+    void checkLimitOrders(const std::string& symbol);
     bool shouldReject();
     bool shouldPartialFill();
     double applySlippage(const std::string& symbol, Side side, double price);

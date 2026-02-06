@@ -77,6 +77,11 @@ public:
     double getRealizedPnL() const;
 
     /**
+     * Get total commissions paid
+     */
+    double getTotalCommissions() const;
+
+    /**
      * Get unrealized P&L
      */
     double getUnrealizedPnL(const std::unordered_map<std::string, double>& marketPrices) const;
@@ -141,9 +146,15 @@ private:
      */
     void onFillEvent(const Event& event);
 
+    /**
+     * Calculate commission for a trade
+     */
+    double calculateCommission(double fillPrice, int64_t fillQuantity) const;
+
     // Capital tracking
     double initialCapital_;
     double cash_;
+    double totalCommissions_;
     
     // Order and position management
     std::unique_ptr<OrderManager> orderManager_;

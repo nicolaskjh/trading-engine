@@ -87,6 +87,7 @@ int main() {
     std::cout << "Final Portfolio State:" << std::endl;
     std::cout << "  Cash: $" << std::fixed << std::setprecision(2) << portfolio->getCash() << std::endl;
     std::cout << "  Realized P&L: $" << std::fixed << std::setprecision(2) << portfolio->getRealizedPnL() << std::endl;
+    std::cout << "  Total Commissions: $" << std::fixed << std::setprecision(2) << portfolio->getTotalCommissions() << std::endl;
     std::cout << std::endl;
     
     // Display open positions
