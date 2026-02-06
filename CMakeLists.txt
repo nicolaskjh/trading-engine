@@ -21,6 +21,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # Source files
 set(ENGINE_SOURCES
+    src/config/Config.cpp
     src/data/BookManager.cpp
     src/data/MarketDataHandler.cpp
     src/data/OrderBook.cpp
@@ -79,6 +80,12 @@ add_executable(test_exchange
     ${ENGINE_SOURCES}
 )
 
+# Test executable - Config Tests
+add_executable(test_config
+    tests/config_test.cpp
+    ${ENGINE_SOURCES}
+)
+
 # Link threading library (required for std::thread, std::mutex)
 find_package(Threads REQUIRED)
 target_link_libraries(trading_engine Threads::Threads)
@@ -89,6 +96,7 @@ target_link_libraries(test_bookmanager Threads::Threads)
 target_link_libraries(test_portfolio Threads::Threads)
 target_link_libraries(test_strategy Threads::Threads)
 target_link_libraries(test_exchange Threads::Threads)
+target_link_libraries(test_config Threads::Threads)
 
 # Enable testing
 enable_testing()
@@ -100,6 +108,7 @@ add_test(NAME OrderBookTests COMMAND test_orderbook)
 add_test(NAME BookManagerTests COMMAND test_bookmanager)
 add_test(NAME PortfolioTests COMMAND test_portfolio)
 add_test(NAME StrategyTests COMMAND test_strategy)
+add_test(NAME ConfigTests COMMAND test_config)
 add_test(NAME ExchangeTests COMMAND test_exchange)
 
 # Print build configuration
