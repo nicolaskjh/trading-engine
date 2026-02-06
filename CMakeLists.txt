@@ -32,6 +32,7 @@ set(ENGINE_SOURCES
     src/logger/Logger.cpp
     src/order/OrderLogger.cpp
     src/order/OrderManager.cpp
+    src/perf/LatencyStats.cpp
     src/risk/Portfolio.cpp
     src/strategy/SMAStrategy.cpp
     src/strategy/StrategyManager.cpp
@@ -123,6 +124,14 @@ add_executable(backtest_sma
 )
 
 target_link_libraries(backtest_sma Threads::Threads)
+
+# Performance test executable
+add_executable(perf_test
+    tests/perf_test.cpp
+    ${ENGINE_SOURCES}
+)
+
+target_link_libraries(perf_test Threads::Threads)
 
 # Print build configuration
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
