@@ -19,14 +19,29 @@ endif()
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-# Main executable
+# Source files
+set(ENGINE_SOURCES
+    src/market_data/MarketDataHandler.cpp
+    src/order/OrderLogger.cpp
+    src/logger/Logger.cpp
+)
+
+# Main executable - Trading Engine
 add_executable(trading_engine
     main.cpp
+    ${ENGINE_SOURCES}
+)
+
+# Test executable - Component Tests
+add_executable(test_engine
+    tests/test_engine.cpp
+    ${ENGINE_SOURCES}
 )
 
 # Link threading library (required for std::thread, std::mutex)
 find_package(Threads REQUIRED)
 target_link_libraries(trading_engine Threads::Threads)
+target_link_libraries(test_engine Threads::Threads)
 
 # Print build configuration
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")

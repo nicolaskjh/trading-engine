@@ -1,3 +1,0 @@
-/Users/nicolas/Projects/trading-engine/build/CMakeFiles/trading_engine.dir
-/Users/nicolas/Projects/trading-engine/build/CMakeFiles/edit_cache.dir
-/Users/nicolas/Projects/trading-engine/build/CMakeFiles/rebuild_cache.dir

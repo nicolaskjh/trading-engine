@@ -6,9 +6,10 @@ High-frequency algorithmic trading engine for US equities, built in C++17. The e
 
 ```
 trading-engine/
-├── include/           # Header files (event system)
+├── include/           # Header files (event system, orders, positions)
 ├── src/               # Implementation files
-├── main.cpp           # Demo application
+├── tests/             # Test files and component validation
+├── main.cpp           # Engine entry point
 ├── CMakeLists.txt     # Build configuration
 └── README.md
 ```
@@ -28,8 +29,11 @@ cmake --build .
 
 ## Running
 
-```bash
-# From build directory
+``Run the trading engine
+./trading_engine
+
+# Run component tests
+./testild directory
 ./trading_engine
 ```
 
