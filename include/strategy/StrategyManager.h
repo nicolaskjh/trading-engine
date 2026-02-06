@@ -22,31 +22,8 @@ namespace engine {
  */
 class StrategyManager {
 public:
-    StrategyManager() {
-        // Subscribe to market data events (MARKET_DATA type covers both quotes and trades)
-        marketDataSubId_ = EventBus::getInstance().subscribe(
-            EventType::MARKET_DATA,
-            [this](const Event& event) { this->onMarketDataEvent(event); }
-        );
-
-        // Subscribe to order events
-        orderSubId_ = EventBus::getInstance().subscribe(
-            EventType::ORDER,
-            [this](const Event& event) { this->onOrderEvent(event); }
-        );
-
-        // Subscribe to fill events
-        fillSubId_ = EventBus::getInstance().subscribe(
-            EventType::FILL,
-            [this](const Event& event) { this->onFillEvent(event); }
-        );
-    }
-
-    ~StrategyManager() {
-        EventBus::getInstance().unsubscribe(marketDataSubId_);
-        EventBus::getInstance().unsubscribe(orderSubId_);
-        EventBus::getInstance().unsubscribe(fillSubId_);
-    }
+    StrategyManager();
+    ~StrategyManager();
 
     // Prevent copying
     StrategyManager(const StrategyManager&) = delete;
@@ -55,167 +32,68 @@ public:
     /**
      * Add a strategy to the manager
      */
-    void addStrategy(std::shared_ptr<Strategy> strategy) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        strategies_.push_back(strategy);
-    }
+    void addStrategy(std::shared_ptr<Strategy> strategy);
 
     /**
      * Remove a strategy by name
      */
-    bool removeStrategy(const std::string& name) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        auto it = std::find_if(strategies_.begin(), strategies_.end(),
-            [&name](const std::shared_ptr<Strategy>& s) {
-                return s->getName() == name;
-            });
-        
-        if (it != strategies_.end()) {
-            (*it)->stop();
-            strategies_.erase(it);
-            return true;
-        }
-        return false;
-    }
+    bool removeStrategy(const std::string& name);
 
     /**
      * Get strategy by name
      */
-    std::shared_ptr<Strategy> getStrategy(const std::string& name) const {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        auto it = std::find_if(strategies_.begin(), strategies_.end(),
-            [&name](const std::shared_ptr<Strategy>& s) {
-                return s->getName() == name;
-            });
-        
-        return (it != strategies_.end()) ? *it : nullptr;
-    }
+    std::shared_ptr<Strategy> getStrategy(const std::string& name) const;
 
     /**
      * Get all strategies
      */
-    std::vector<std::shared_ptr<Strategy>> getAllStrategies() const {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        return strategies_;
-    }
+    std::vector<std::shared_ptr<Strategy>> getAllStrategies() const;
 
     /**
      * Get count of registered strategies
      */
-    size_t getStrategyCount() const {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        return strategies_.size();
-    }
+    size_t getStrategyCount() const;
 
     /**
      * Start all strategies
      */
-    void startAll() {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        for (auto& strategy : strategies_) {
-            strategy->start();
-        }
-    }
+    void startAll();
 
     /**
      * Stop all strategies
      */
-    void stopAll() {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        for (auto& strategy : strategies_) {
-            strategy->stop();
-        }
-    }
+    void stopAll();
 
     /**
      * Start a specific strategy
      */
-    bool startStrategy(const std::string& name) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        auto strategy = getStrategyUnlocked(name);
-        if (strategy) {
-            strategy->start();
-            return true;
-        }
-        return false;
-    }
+    bool startStrategy(const std::string& name);
 
     /**
      * Stop a specific strategy
      */
-    bool stopStrategy(const std::string& name) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        auto strategy = getStrategyUnlocked(name);
-        if (strategy) {
-            strategy->stop();
-            return true;
-        }
-        return false;
-    }
+    bool stopStrategy(const std::string& name);
 
 private:
     /**
      * Handle market data events and route to strategies
      */
-    void onMarketDataEvent(const Event& event) {
-        // Try to cast to TradeEvent first
-        const auto* tradeEvent = dynamic_cast<const TradeEvent*>(&event);
-        if (tradeEvent) {
-            std::lock_guard<std::recursive_mutex> lock(mutex_);
-            for (auto& strategy : strategies_) {
-                strategy->handleTradeEvent(*tradeEvent);
-            }
-            return;
-        }
-
-        // Try to cast to QuoteEvent
-        const auto* quoteEvent = dynamic_cast<const QuoteEvent*>(&event);
-        if (quoteEvent) {
-            std::lock_guard<std::recursive_mutex> lock(mutex_);
-            for (auto& strategy : strategies_) {
-                strategy->handleQuoteEvent(*quoteEvent);
-            }
-            return;
-        }
-    }
+    void onMarketDataEvent(const Event& event);
 
     /**
      * Handle order events and route to strategies
      */
-    void onOrderEvent(const Event& event) {
-        const auto* orderEvent = dynamic_cast<const OrderEvent*>(&event);
-        if (!orderEvent) return;
-
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        for (auto& strategy : strategies_) {
-            strategy->handleOrderEvent(*orderEvent);
-        }
-    }
+    void onOrderEvent(const Event& event);
 
     /**
      * Handle fill events and route to strategies
      */
-    void onFillEvent(const Event& event) {
-        const auto* fillEvent = dynamic_cast<const FillEvent*>(&event);
-        if (!fillEvent) return;
-
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        for (auto& strategy : strategies_) {
-            strategy->handleFillEvent(*fillEvent);
-        }
-    }
+    void onFillEvent(const Event& event);
 
     /**
      * Get strategy without locking (caller must hold lock)
      */
-    std::shared_ptr<Strategy> getStrategyUnlocked(const std::string& name) const {
-        auto it = std::find_if(strategies_.begin(), strategies_.end(),
-            [&name](const std::shared_ptr<Strategy>& s) {
-                return s->getName() == name;
-            });
-        
-        return (it != strategies_.end()) ? *it : nullptr;
-    }
+    std::shared_ptr<Strategy> getStrategyUnlocked(const std::string& name) const;
 
     std::vector<std::shared_ptr<Strategy>> strategies_;
     uint64_t marketDataSubId_;

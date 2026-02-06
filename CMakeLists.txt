@@ -25,8 +25,10 @@ set(ENGINE_SOURCES
     src/data/BookManager.cpp
     src/data/MarketDataHandler.cpp
     src/data/OrderBook.cpp
+    src/exchange/SimulatedExchange.cpp
     src/logger/Logger.cpp
     src/order/OrderLogger.cpp
+    src/order/OrderManager.cpp
     src/risk/Portfolio.cpp
     src/strategy/SMAStrategy.cpp
     src/strategy/StrategyManager.cpp
