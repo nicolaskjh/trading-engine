@@ -29,12 +29,12 @@ cmake --build .
 
 ## Running
 
-``Run the trading engine
+```bash
+# Run the trading engine
 ./trading_engine
 
 # Run component tests
-./testild directory
-./trading_engine
+./test_engine
 ```
 
 ## Build Configuration
