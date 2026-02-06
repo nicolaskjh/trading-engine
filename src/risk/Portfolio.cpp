@@ -1,4 +1,8 @@
 #include "risk/Portfolio.h"
+#include "logger/Logger.h"
+
+#include <sstream>
+#include <iomanip>
 
 namespace engine {
 
@@ -190,14 +194,27 @@ void Portfolio::onFillEvent(const Event& event) {
     const auto* fillEvent = dynamic_cast<const FillEvent*>(&event);
     if (!fillEvent) return;
     
-    std::lock_guard<std::mutex> lock(mutex_);
-    
     // Calculate trade value
     double tradeValue = fillEvent->getFillPrice() * fillEvent->getFillQuantity();
     
     // Calculate commission
     double commission = calculateCommission(fillEvent->getFillPrice(), 
                                            fillEvent->getFillQuantity());
+    
+    // Log trade details with commission
+    std::ostringstream oss;
+    oss << "Trade executed: " 
+        << fillEvent->getSymbol() << " "
+        << (fillEvent->getSide() == Side::BUY ? "BUY" : "SELL") << " "
+        << fillEvent->getFillQuantity() << " @ $"
+        << std::fixed << std::setprecision(2) << fillEvent->getFillPrice()
+        << " | Value: $" << std::fixed << std::setprecision(2) << tradeValue
+        << " | Commission: $" << std::fixed << std::setprecision(2) << commission
+        << " | Net: $" << std::fixed << std::setprecision(2) 
+        << (fillEvent->getSide() == Side::BUY ? -(tradeValue + commission) : (tradeValue - commission));
+    Logger::info(LogComponent::PORTFOLIO, oss.str());
+    
+    std::lock_guard<std::mutex> lock(mutex_);
     
     // Adjust cash based on trade side
     if (fillEvent->getSide() == Side::BUY) {

@@ -104,6 +104,7 @@ std::string Logger::getComponentString(LogComponent component) {
         case LogComponent::MARKET_DATA_HANDLER: return "MarketDataHandler";
         case LogComponent::ORDER_LOGGER: return "OrderLogger";
         case LogComponent::ORDER_MANAGER: return "OrderManager";
+        case LogComponent::PORTFOLIO: return "Portfolio";
         case LogComponent::SYSTEM: return "System";
         case LogComponent::TIMER: return "Timer";
         default: return "Unknown";

@@ -31,6 +31,7 @@ enum class LogComponent {
     MARKET_DATA_HANDLER,
     ORDER_LOGGER,
     ORDER_MANAGER,
+    PORTFOLIO,
     SYSTEM,
     TIMER
 };

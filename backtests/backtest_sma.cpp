@@ -8,6 +8,8 @@
 
 #include "backtesting/Backtester.h"
 #include "config/Config.h"
+#include "logger/Logger.h"
+#include "order/OrderLogger.h"
 #include "risk/Portfolio.h"
 #include "strategy/SMAStrategy.h"
 
@@ -20,6 +22,12 @@ using namespace engine;
 int main() {
     std::cout << "=== SMA Strategy Backtest ===" << std::endl;
     std::cout << std::endl;
+    
+    // Initialize logger with file output
+    Logger::init(LogLevel::INFO, "logs/backtest_sma.log");
+    
+    // Create order logger to track all trades
+    auto orderLogger = std::make_unique<OrderLogger>();
     
     // Load configuration
     try {

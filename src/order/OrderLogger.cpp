@@ -75,6 +75,8 @@ void OrderLogger::onFillEvent(const Event& event) {
         << " " << fill->getFillQuantity()
         << " @ $" << std::fixed << std::setprecision(2) 
         << fill->getFillPrice()
+        << " | Value: $" << std::fixed << std::setprecision(2)
+        << (fill->getFillPrice() * fill->getFillQuantity())
         << " | Latency: " << event.getAgeInMicroseconds() << "μs";
     Logger::info(LogComponent::ORDER_LOGGER, oss.str());
 }
