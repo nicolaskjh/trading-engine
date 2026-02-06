@@ -11,6 +11,7 @@
 #include "risk/Portfolio.h"
 #include "strategy/SMAStrategy.h"
 
+#include <iomanip>
 #include <iostream>
 #include <memory>
 
@@ -33,7 +34,7 @@ int main() {
     std::string dataFile = Config::getString("backtest.data_file", "data/historical_trades.csv");
     
     std::cout << "Configuration:" << std::endl;
-    std::cout << "  Initial Capital: $" << initialCapital << std::endl;
+    std::cout << "  Initial Capital: $" << std::fixed << std::setprecision(2) << initialCapital << std::endl;
     std::cout << "  Data File: " << dataFile << std::endl;
     std::cout << "  SMA Fast Period: " << Config::getInt("strategy.sma.fast_period", 20) << std::endl;
     std::cout << "  SMA Slow Period: " << Config::getInt("strategy.sma.slow_period", 50) << std::endl;
@@ -84,8 +85,8 @@ int main() {
     
     // Display portfolio state
     std::cout << "Final Portfolio State:" << std::endl;
-    std::cout << "  Cash: $" << portfolio->getCash() << std::endl;
-    std::cout << "  Realized P&L: $" << portfolio->getRealizedPnL() << std::endl;
+    std::cout << "  Cash: $" << std::fixed << std::setprecision(2) << portfolio->getCash() << std::endl;
+    std::cout << "  Realized P&L: $" << std::fixed << std::setprecision(2) << portfolio->getRealizedPnL() << std::endl;
     std::cout << std::endl;
     
     // Display open positions
@@ -95,8 +96,8 @@ int main() {
         for (const auto& position : positions) {
             std::cout << "  " << position->getSymbol() 
                       << ": " << position->getQuantity() 
-                      << " @ $" << position->getAveragePrice()
-                      << " (Realized P&L: $" << position->getRealizedPnL() << ")"
+                      << " @ $" << std::fixed << std::setprecision(2) << position->getAveragePrice()
+                      << " (Realized P&L: $" << std::fixed << std::setprecision(2) << position->getRealizedPnL() << ")"
                       << std::endl;
         }
     } else {

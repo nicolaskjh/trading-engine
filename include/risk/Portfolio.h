@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config/Config.h"
+#include "event/EventBus.h"
 #include "order/Order.h"
 #include "order/OrderManager.h"
 
@@ -32,6 +33,11 @@ public:
      * Constructor with explicit initial capital (overrides config)
      */
     explicit Portfolio(double initialCapital);
+
+    /**
+     * Destructor - unsubscribes from events
+     */
+    ~Portfolio();
 
     // Prevent copying
     Portfolio(const Portfolio&) = delete;
@@ -130,6 +136,11 @@ private:
                           int64_t quantity, 
                           const std::unordered_map<std::string, double>& marketPrices) const;
 
+    /**
+     * Handle fill events to update cash balance
+     */
+    void onFillEvent(const Event& event);
+
     // Capital tracking
     double initialCapital_;
     double cash_;
@@ -140,6 +151,9 @@ private:
     // Risk limits
     double maxPositionSize_;
     double maxPortfolioExposure_;
+    
+    // Event subscription
+    int fillSubId_;
     
     // Thread safety
     mutable std::mutex mutex_;

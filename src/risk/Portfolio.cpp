@@ -8,7 +8,13 @@ Portfolio::Portfolio()
     , orderManager_(std::make_unique<OrderManager>())
     , maxPositionSize_(Config::getDouble("portfolio.max_position_size", 1000000.0))
     , maxPortfolioExposure_(Config::getDouble("portfolio.max_portfolio_exposure", 5000000.0))
-{}
+{
+    // Subscribe to fill events to update cash
+    fillSubId_ = EventBus::getInstance().subscribe(
+        EventType::FILL,
+        [this](const Event& event) { this->onFillEvent(event); }
+    );
+}
 
 Portfolio::Portfolio(double initialCapital)
     : initialCapital_(initialCapital)
@@ -16,19 +22,30 @@ Portfolio::Portfolio(double initialCapital)
     , orderManager_(std::make_unique<OrderManager>())
     , maxPositionSize_(Config::getDouble("portfolio.max_position_size", 1000000.0))
     , maxPortfolioExposure_(Config::getDouble("portfolio.max_portfolio_exposure", 5000000.0))
-{}
+{
+    // Subscribe to fill events to update cash
+    fillSubId_ = EventBus::getInstance().subscribe(
+        EventType::FILL,
+        [this](const Event& event) { this->onFillEvent(event); }
+    );
+}
+
+Portfolio::~Portfolio() {
+    EventBus::getInstance().unsubscribe(fillSubId_);
+}
 
 bool Portfolio::submitOrder(const std::string& orderId, const std::string& symbol,
                 Side side, OrderType type, double price, int64_t quantity,
                 const std::unordered_map<std::string, double>& marketPrices) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    
-    // Pre-trade risk checks
-    if (!preTradeRiskCheck(symbol, side, price, quantity, marketPrices)) {
-        return false;
+    // Pre-trade risk checks (with lock)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (!preTradeRiskCheck(symbol, side, price, quantity, marketPrices)) {
+            return false;
+        }
     }
     
-    // Submit order
+    // Submit order (without lock - this may trigger events that callback to Portfolio)
     orderManager_->submitOrder(orderId, symbol, side, type, price, quantity);
     return true;
 }
@@ -159,6 +176,25 @@ bool Portfolio::preTradeRiskCheck(const std::string& symbol, Side side, double p
     }
     
     return true;  // All checks passed
+}
+
+void Portfolio::onFillEvent(const Event& event) {
+    const auto* fillEvent = dynamic_cast<const FillEvent*>(&event);
+    if (!fillEvent) return;
+    
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    // Calculate trade value
+    double tradeValue = fillEvent->getFillPrice() * fillEvent->getFillQuantity();
+    
+    // Adjust cash based on trade side
+    if (fillEvent->getSide() == Side::BUY) {
+        // Buying: debit cash
+        cash_ -= tradeValue;
+    } else if (fillEvent->getSide() == Side::SELL) {
+        // Selling: credit cash
+        cash_ += tradeValue;
+    }
 }
 
 } // namespace engine
