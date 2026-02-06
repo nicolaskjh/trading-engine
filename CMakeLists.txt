@@ -43,6 +43,12 @@ find_package(Threads REQUIRED)
 target_link_libraries(trading_engine Threads::Threads)
 target_link_libraries(test_engine Threads::Threads)
 
+# Enable testing
+enable_testing()
+
+# Register test with CTest
+add_test(NAME EngineTests COMMAND test_engine)
+
 # Print build configuration
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER}")
