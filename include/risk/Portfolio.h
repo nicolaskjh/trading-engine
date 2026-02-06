@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/Config.h"
 #include "order/Order.h"
 #include "order/OrderManager.h"
 
@@ -23,14 +24,25 @@ namespace engine {
 class Portfolio {
 public:
     /**
-     * Constructor with initial capital
+     * Constructor - loads settings from config
+     */
+    Portfolio()
+        : initialCapital_(Config::getDouble("portfolio.initial_capital", 1000000.0))
+        , cash_(initialCapital_)
+        , orderManager_(std::make_unique<OrderManager>())
+        , maxPositionSize_(Config::getDouble("portfolio.max_position_size", 1000000.0))
+        , maxPortfolioExposure_(Config::getDouble("portfolio.max_portfolio_exposure", 5000000.0))
+    {}
+
+    /**
+     * Constructor with explicit initial capital (overrides config)
      */
     explicit Portfolio(double initialCapital)
         : initialCapital_(initialCapital)
         , cash_(initialCapital)
         , orderManager_(std::make_unique<OrderManager>())
-        , maxPositionSize_(1000000)  // Default: $1M per position
-        , maxPortfolioExposure_(5000000)  // Default: $5M total exposure
+        , maxPositionSize_(Config::getDouble("portfolio.max_position_size", 1000000.0))
+        , maxPortfolioExposure_(Config::getDouble("portfolio.max_portfolio_exposure", 5000000.0))
     {}
 
     // Prevent copying

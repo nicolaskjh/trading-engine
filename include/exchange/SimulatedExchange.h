@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/Config.h"
 #include "event/EventBus.h"
 #include "event/OrderEvent.h"
 #include "exchange/ExchangeConnector.h"
@@ -38,11 +39,11 @@ public:
         bool instantFills;
 
         Config()
-            : fillLatencyMs(10)
-            , rejectionRate(0.0)
-            , partialFillRate(0.0)
-            , slippageBps(5.0)
-            , instantFills(false) {}
+            : fillLatencyMs(engine::Config::getInt("exchange.fill_latency_ms", 10))
+            , rejectionRate(engine::Config::getDouble("exchange.rejection_rate", 0.0))
+            , partialFillRate(engine::Config::getDouble("exchange.partial_fill_rate", 0.0))
+            , slippageBps(engine::Config::getDouble("exchange.slippage_bps", 5.0))
+            , instantFills(engine::Config::getBool("exchange.instant_fills", false)) {}
     };
 
     explicit SimulatedExchange(const Config& config = Config())

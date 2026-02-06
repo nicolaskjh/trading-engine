@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/Config.h"
 #include "strategy/Strategy.h"
 
 #include <deque>
@@ -24,7 +25,21 @@ namespace engine {
 class SMAStrategy : public Strategy {
 public:
     /**
-     * Constructor
+     * Constructor - loads settings from config
+     */
+    SMAStrategy(const std::string& name, 
+                std::shared_ptr<Portfolio> portfolio,
+                const std::string& symbol)
+        : Strategy(name, portfolio)
+        , symbol_(symbol)
+        , fastPeriod_(Config::getInt("strategy.sma.fast_period", 10))
+        , slowPeriod_(Config::getInt("strategy.sma.slow_period", 30))
+        , positionSize_(Config::getInt("strategy.sma.position_size", 10000))
+        , previousCross_(CrossState::NONE)
+    {}
+
+    /**
+     * Constructor with explicit parameters (overrides config)
      */
     SMAStrategy(const std::string& name, 
                 std::shared_ptr<Portfolio> portfolio,
